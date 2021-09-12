@@ -16,12 +16,12 @@ import os
 import sys
 from setuptools import setup, find_packages
 
-required_packages = ['libvirt-python']
+required_packages = ["libvirt-python"]
 
 # Python < 3.3 requires backported ipaddress package
 major_version, minor_version = sys.version_info[:2]
 if major_version < 3 or minor_version < 3:
-    required_packages.append('ipaddress')
+    required_packages.append("ipaddress")
 
 
 def read(fname):
@@ -39,12 +39,12 @@ setup(
     install_requires=required_packages,
     keywords="sandbox test automation",
     url="https://github.com/f-secure/see",
-    long_description=read('README.rst'),
+    long_description=read("README.rst"),
     classifiers=[
         "Programming Language :: Python",
         "Programming Language :: Python :: 3",
         "Development Status :: 5 - Production/Stable",
         "License :: OSI Approved :: Apache Software License",
-        "Topic :: Software Development :: Libraries :: Python Modules"
+        "Topic :: Software Development :: Libraries :: Python Modules",
     ],
 )

@@ -19,22 +19,21 @@ import subprocess
 
 
 def launch_process(*args):
-    return subprocess.Popen(args,
-                            stdout=subprocess.PIPE,
-                            stderr=subprocess.STDOUT)
+    return subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
 
 
 def collect_process_output(process, filename=None):
-    output = process.communicate()[0].decode('utf8')
+    output = process.communicate()[0].decode("utf8")
 
     if process.returncode == 0:
         if filename is not None:
-            with open(filename, 'w') as result_file:
+            with open(filename, "w") as result_file:
                 result_file.write(output)
     else:
         raise RuntimeError(
             "%s exit code %d, output:\n%s"
-            % (' '.join(process.args), process.returncode, output))
+            % (" ".join(process.args), process.returncode, output)
+        )
 
 
 def create_folder(folder_path):

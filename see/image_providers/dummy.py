@@ -23,9 +23,10 @@ from see.interfaces import ImageProvider
 
 class DummyProvider(ImageProvider):
     """Returns the configured image URI as is."""
+
     def __init__(self, parameters):
         super(DummyProvider, self).__init__(parameters)
 
     @property
     def image(self):
-        return os.path.join(self.configuration.get('path'), self.name)
+        return os.path.join(self.configuration.get("path"), self.name)

@@ -12,10 +12,7 @@
 # implied.  See the License for the specific language governing
 # permissions and limitations under the License.
 
-__all__ = ['Hook',
-           'Context',
-           'Environment',
-           'Event']
+__all__ = ["Hook", "Context", "Environment", "Event"]
 
 from see.events import Event
 from see.environment import Environment

@@ -48,7 +48,6 @@ except NameError:
 
 
 class S3Provider(ImageProvider):
-
     def __init__(self, parameters):
         super(S3Provider, self).__init__(parameters)
         self._s3_client = None
@@ -56,24 +55,28 @@ class S3Provider(ImageProvider):
     @property
     def image(self):
         metadata = self.s3_client.ObjectSummary(
-            self.configuration['bucket_name'], self.name)
+            self.configuration["bucket_name"], self.name
+        )
         try:
-            if (os.path.exists(self.configuration['path']) and
-                    os.path.isfile(os.path.realpath(
-                        self.configuration['path'])) and
-                    datetime.fromtimestamp(os.path.getmtime(
-                        self.configuration['path'])) > metadata.last_modified):
-                return self.configuration['path']
+            if (
+                os.path.exists(self.configuration["path"])
+                and os.path.isfile(os.path.realpath(self.configuration["path"]))
+                and datetime.fromtimestamp(os.path.getmtime(self.configuration["path"]))
+                > metadata.last_modified
+            ):
+                return self.configuration["path"]
         except ClientError:
-            if os.path.exists(self.configuration['path']) and os.path.isfile(
-                    os.path.realpath(self.configuration['path'])):
-                return self.configuration['path']
-            raise FileNotFoundError('No image found')
+            if os.path.exists(self.configuration["path"]) and os.path.isfile(
+                os.path.realpath(self.configuration["path"])
+            ):
+                return self.configuration["path"]
+            raise FileNotFoundError("No image found")
 
-        target = (self.configuration['path']
-                  if os.path.isfile(self.configuration['path'])
-                  else os.path.join(self.configuration['path'],
-                                    metadata.e_tag.strip('"')))
+        target = (
+            self.configuration["path"]
+            if os.path.isfile(self.configuration["path"])
+            else os.path.join(self.configuration["path"], metadata.e_tag.strip('"'))
+        )
 
         os.makedirs(os.path.dirname(os.path.realpath(target)), exist_ok=True)
 
@@ -82,45 +85,52 @@ class S3Provider(ImageProvider):
     @property
     def s3_client(self):
         if self._s3_client is None:
-            self._s3_client = boto3.resource('s3',
-                                             **self.configuration.get('auth'))
+            self._s3_client = boto3.resource("s3", **self.configuration.get("auth"))
         return self._s3_client
 
     def _download_image(self, metadata, target):
         def _older_image():
             for version in sorted(
-                    self.s3_client.meta.client.list_object_versions(
-                        Bucket=self.configuration['bucket_name'],
-                        Prefix=self.name)['Versions'],
-                    key=lambda v: v['LastModified'], reverse=True):
-                oldimg = os.path.join(os.path.dirname(target),
-                                      version['ETag'].strip('"'))
+                self.s3_client.meta.client.list_object_versions(
+                    Bucket=self.configuration["bucket_name"], Prefix=self.name
+                )["Versions"],
+                key=lambda v: v["LastModified"],
+                reverse=True,
+            ):
+                oldimg = os.path.join(
+                    os.path.dirname(target), version["ETag"].strip('"')
+                )
                 if os.path.exists(oldimg) and oldimg != target:
                     return oldimg
-            raise FileNotFoundError('No viable images available')
+            raise FileNotFoundError("No viable images available")
 
-        partfile = '{}.part'.format(target)
+        partfile = "{}.part".format(target)
         if os.path.exists(partfile):
             return _older_image()
 
         if not os.path.exists(target):
             try:
-                self.s3_client.Object(self.configuration['bucket_name'],
-                                      self.name).download_file(partfile)
+                self.s3_client.Object(
+                    self.configuration["bucket_name"], self.name
+                ).download_file(partfile)
             except ClientError:
-                raise FileNotFoundError('No image found')
+                raise FileNotFoundError("No image found")
 
             if not verify_etag(partfile, metadata.e_tag.strip('"')):
                 os.remove(partfile)
-                raise RuntimeError('Checksum failure. File: %s' % target)
+                raise RuntimeError("Checksum failure. File: %s" % target)
             os.rename(partfile, target)
 
-            if self.configuration.get('libvirt_pool'):
+            if self.configuration.get("libvirt_pool"):
                 import libvirt
+
                 hypervisor = libvirt.open(
-                    self.configuration['libvirt_pool'].get('hypervisor',
-                                                           'qemu:///system'))
+                    self.configuration["libvirt_pool"].get(
+                        "hypervisor", "qemu:///system"
+                    )
+                )
                 pool = hypervisor.storagePoolLookupByName(
-                    self.configuration['libvirt_pool']['name'])
+                    self.configuration["libvirt_pool"]["name"]
+                )
                 pool.refresh()
         return target

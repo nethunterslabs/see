@@ -45,15 +45,16 @@ class Environment(object):
       a default one will be created.
 
     """
-    def __init__(self, contextfactory, configuration,
-                 identifier=None, logger=None):
+
+    def __init__(self, contextfactory, configuration, identifier=None, logger=None):
         self._identifier = identifier or str(uuid.uuid4())
         self._context = None
         self._hookmanager = None
         self._contextfactory = contextfactory
         self.configuration = configuration
         self.logger = logger or logging.getLogger(
-            "%s.%s" % (self.__module__, self.__class__.__name__))
+            "%s.%s" % (self.__module__, self.__class__.__name__)
+        )
 
     def __enter__(self):
         self.allocate()
@@ -72,7 +73,7 @@ class Environment(object):
         if self._context is not None:
             return self._context
         else:
-            raise RuntimeError('Environment not allocated')
+            raise RuntimeError("Environment not allocated")
 
     def allocate(self):
         """Builds the context and the Hooks."""
@@ -83,9 +84,9 @@ class Environment(object):
     def _allocate(self):
         self.configuration = load_configuration(self.configuration)
         self._context = self._contextfactory(self.identifier)
-        self._hookmanager = hooks_factory(self.identifier,
-                                          self.configuration,
-                                          self._context)
+        self._hookmanager = hooks_factory(
+            self.identifier, self.configuration, self._context
+        )
 
     def deallocate(self):
         """Cleans up the context and the Hooks."""
@@ -111,7 +112,7 @@ def load_configuration(configuration):
 def cleanup(logger, *args):
     """Environment's cleanup routine."""
     for obj in args:
-        if obj is not None and hasattr(obj, 'cleanup'):
+        if obj is not None and hasattr(obj, "cleanup"):
             try:
                 obj.cleanup()
             except NotImplementedError:

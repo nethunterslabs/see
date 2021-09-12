@@ -58,62 +58,66 @@ class CommandsHook(Hook):
     'ip_address' within the field 'address'.
 
     """
+
     def __init__(self, parameters):
         super().__init__(parameters)
         self.setup_handlers()
-        self.host = self.configuration.get('agent-host')
-        self.port = self.configuration['agent-port']
+        self.host = self.configuration.get("agent-host")
+        self.port = self.configuration["agent-port"]
 
     def setup_handlers(self):
-        self.context.subscribe('ip_address', self.set_address_handler)
-        self.context.subscribe_async('run_command', self.run_command_handler)
-        self.context.subscribe_async('run_sample', self.run_sample_handler)
+        self.context.subscribe("ip_address", self.set_address_handler)
+        self.context.subscribe_async("run_command", self.run_command_handler)
+        self.context.subscribe_async("run_sample", self.run_sample_handler)
 
         self.logger.debug("Command execution registered at run_command event")
         self.logger.debug("Sample execution registered at run_sample event")
 
     def set_address_handler(self, event):
-        self.logger.debug("Event %s: agent address <%s>.",
-                          event, event.address)
+        self.logger.debug("Event %s: agent address <%s>.", event, event.address)
 
         self.host = event.address
 
     def run_command_handler(self, event):
-        self.logger.debug("Event %s: running command <%s>.",
-                          event, event.command)
+        self.logger.debug("Event %s: running command <%s>.", event, event.command)
 
-        async_flag = hasattr(event, 'async_flag') and event.async_flag or False
+        async_flag = hasattr(event, "async_flag") and event.async_flag or False
         response = self.command_request(event.command, async_flag)
 
         self.log_command_response(event.command, response, async_flag)
 
     def run_sample_handler(self, event):
-        self.logger.debug("Event %s: running command <%s>.",
-                          event, event.command)
+        self.logger.debug("Event %s: running command <%s>.", event, event.command)
 
-        async_flag = hasattr(event, 'async_flag') and event.async_flag or False
+        async_flag = hasattr(event, "async_flag") and event.async_flag or False
         response = self.sample_request(event.command, event.sample, async_flag)
 
         self.log_command_response(event.command, response, async_flag)
 
     def command_request(self, command, async_flag):
-        url = 'http://%s:%d' % (self.host, self.port)
-        response = requests.get(url, params={'command': command,
-                                             'async': int(async_flag)})
+        url = "http://%s:%d" % (self.host, self.port)
+        response = requests.get(
+            url, params={"command": command, "async": int(async_flag)}
+        )
         response.raise_for_status()
 
         return response
 
     def sample_request(self, command, sample, async_flag):
-        url = 'http://%s:%d' % (self.host, self.port)
+        url = "http://%s:%d" % (self.host, self.port)
 
-        with open(sample, 'rb') as sample_file:
+        with open(sample, "rb") as sample_file:
             data = sample_file.read()
 
-        response = requests.post(url, data=data,
-                                 params={'command': command,
-                                         'sample': os.path.basename(sample),
-                                         'async': int(async_flag)})
+        response = requests.post(
+            url,
+            data=data,
+            params={
+                "command": command,
+                "sample": os.path.basename(sample),
+                "async": int(async_flag),
+            },
+        )
         response.raise_for_status()
 
         return response
@@ -122,8 +126,8 @@ class CommandsHook(Hook):
         if not async_flag:
             results = response.json()
 
-            self.logger.info("Command <%s> output:\n%s",
-                             command, json.dumps(results, indent=2))
+            self.logger.info(
+                "Command <%s> output:\n%s", command, json.dumps(results, indent=2)
+            )
         else:
-            self.logger.info("Asynchronous command <%s> dispatched to agent.",
-                             command)
+            self.logger.info("Asynchronous command <%s> dispatched to agent.", command)

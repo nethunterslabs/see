@@ -23,6 +23,7 @@ class Observatory(object):
     """
     Base class for observers and observables.
     """
+
     def __init__(self, identifier):
         self._identifier = identifier
 
@@ -37,6 +38,7 @@ class Observer(Observatory):
     Through the Context attribute it can subscribe/unsubscribe its own handlers
     to the given Events.
     """
+
     def __init__(self, identifier, context):
         super(Observer, self).__init__(identifier)
         self._context = context
@@ -108,9 +110,7 @@ class Observable(Observatory):
                 synchronous(handler, event)
 
 
-Handlers = namedtuple('Handlers', ('sync_handlers',
-                                   'async_handlers',
-                                   'trigger_mutex'))
+Handlers = namedtuple("Handlers", ("sync_handlers", "async_handlers", "trigger_mutex"))
 
 
 def prime_event(event, source, **kwargs):
@@ -146,9 +146,9 @@ def synchronous(function, event):
 
 
 def get_function_logger(function):
-    if hasattr(function, '__self__'):
+    if hasattr(function, "__self__"):
         return logging.getLogger(
-            "%s.%s" % (function.__module__,
-                       function.__self__.__class__.__name__))
+            "%s.%s" % (function.__module__, function.__self__.__class__.__name__)
+        )
     else:
         return logging.getLogger(function.__module__)

@@ -51,18 +51,19 @@ from urllib.parse import urlparse, parse_qs
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
 
-PopenOutput = namedtuple('PopenOutput', ('code', 'log'))
+PopenOutput = namedtuple("PopenOutput", ("code", "log"))
 
 
 class Agent(BaseHTTPRequestHandler):
     """Serves HTTP requests allowing to execute remote commands."""
+
     def do_GET(self):
         """Run simple command with parameters."""
         logging.debug("New GET request.")
 
         query = parse_qs(urlparse(self.path).query)
-        command = query['command'][0].split(' ')
-        async_flag = bool(int(query.get('async', [False])[0]))
+        command = query["command"][0].split(" ")
+        async_flag = bool(int(query.get("async", [False])[0]))
         output = run_command(command, asynchronous=async_flag)
 
         self.respond(output)
@@ -72,11 +73,11 @@ class Agent(BaseHTTPRequestHandler):
         logging.debug("New POST request.")
 
         query = parse_qs(urlparse(self.path).query)
-        sample = query['sample'][0]
-        async_flag = bool(int(query.get('async', [False])[0]))
+        sample = query["sample"][0]
+        async_flag = bool(int(query.get("async", [False])[0]))
 
         path = self.store_file(mkdtemp(), sample)
-        command = query['command'][0].format(sample=path).split(' ')
+        command = query["command"][0].format(sample=path).split(" ")
 
         output = run_command(command, asynchronous=async_flag)
 
@@ -84,12 +85,11 @@ class Agent(BaseHTTPRequestHandler):
 
     def respond(self, output):
         """Generates server response."""
-        response = {'exit_code': output.code,
-                    'command_output': output.log}
+        response = {"exit_code": output.code, "command_output": output.log}
 
         self.send_response(200)
 
-        self.send_header('Content-type', 'application/json')
+        self.send_header("Content-type", "application/json")
         self.end_headers()
 
         self.wfile.write(bytes(json.dumps(response), "utf8"))
@@ -97,9 +97,9 @@ class Agent(BaseHTTPRequestHandler):
     def store_file(self, folder, name):
         """Stores the uploaded file in the given path."""
         path = os.path.join(folder, name)
-        length = self.headers['content-length']
+        length = self.headers["content-length"]
 
-        with open(path, 'wb') as sample:
+        with open(path, "wb") as sample:
             sample.write(self.rfile.read(int(length)))
 
         return path
@@ -107,22 +107,24 @@ class Agent(BaseHTTPRequestHandler):
 
 def run_command(args, asynchronous=False):
     """Executes a command returning its exit code and output."""
-    logging.info("Executing %s command %s.",
-                 asynchronous and 'asynchronous' or 'synchronous', args)
+    logging.info(
+        "Executing %s command %s.",
+        asynchronous and "asynchronous" or "synchronous",
+        args,
+    )
 
-    process = subprocess.Popen(args,
-                               shell=True,
-                               stdout=subprocess.PIPE,
-                               stderr=subprocess.STDOUT)
+    process = subprocess.Popen(
+        args, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT
+    )
 
     try:
         timeout = asynchronous and 1 or None
-        output = process.communicate(timeout=timeout)[0].decode('utf8')
+        output = process.communicate(timeout=timeout)[0].decode("utf8")
     except subprocess.TimeoutExpired:
         pass
 
     if asynchronous:
-        return PopenOutput(None, 'Asynchronous call.')
+        return PopenOutput(None, "Asynchronous call.")
     else:
         return PopenOutput(process.returncode, output)
 
@@ -146,14 +148,15 @@ def run_server(host, port):
 
 
 def parse_arguments():
-    parser = argparse.ArgumentParser(description='Guest VM Agent.')
-    parser.add_argument('host', type=str, help='Server address')
-    parser.add_argument('port', type=int, help='Server port')
-    parser.add_argument('-d', '--debug', action='store_true', default=False,
-                        help='log in debug mode')
+    parser = argparse.ArgumentParser(description="Guest VM Agent.")
+    parser.add_argument("host", type=str, help="Server address")
+    parser.add_argument("port", type=int, help="Server port")
+    parser.add_argument(
+        "-d", "--debug", action="store_true", default=False, help="log in debug mode"
+    )
 
     return parser.parse_args()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

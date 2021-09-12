@@ -32,7 +32,7 @@ from vminspect import DiskComparator
 from .utils import launch_process, collect_process_output, create_folder
 
 
-QEMU_IMG = 'qemu-img'
+QEMU_IMG = "qemu-img"
 
 
 class DiskCheckPointHook(Hook):
@@ -59,6 +59,7 @@ class DiskCheckPointHook(Hook):
     at the end of the execution.
 
     """
+
     SNAPSHOT_XML = """
     <domainsnapshot>
       <name>{0}</name>
@@ -73,15 +74,17 @@ class DiskCheckPointHook(Hook):
         self.setup_handlers()
 
     def setup_handlers(self):
-        if 'checkpoint_on_event' in self.configuration:
-            configured_events = self.configuration['checkpoint_on_event']
-            events = (isinstance(configured_events, str)
-                      and [configured_events] or configured_events)
+        if "checkpoint_on_event" in self.configuration:
+            configured_events = self.configuration["checkpoint_on_event"]
+            events = (
+                isinstance(configured_events, str)
+                and [configured_events]
+                or configured_events
+            )
 
             for event in events:
                 self.context.subscribe(event, self.disk_checkpoint_handler)
-                self.logger.debug("Disk checkpoint registered at %s event",
-                                  event)
+                self.logger.debug("Disk checkpoint registered at %s event", event)
 
     def disk_checkpoint_handler(self, event):
         self.logger.debug("Event %s: taking disk checkpoint.", event)
@@ -92,24 +95,23 @@ class DiskCheckPointHook(Hook):
         self.logger.info("Disk checkpoint %s taken.", checkpoint_path)
 
     def disk_checkpoint(self, event):
-        volume = self.context.storage_pool.storageVolLookupByName(
-            self.identifier)
+        volume = self.context.storage_pool.storageVolLookupByName(self.identifier)
         disk_snapshot = self.disk_snapshot(event)
 
         self.logger.info("DISK SNAPSHOT %s", disk_snapshot.getName())
-        disk_path = snapshot_to_checkpoint(volume, disk_snapshot,
-                                           self.configuration['results_folder'])
+        disk_path = snapshot_to_checkpoint(
+            volume, disk_snapshot, self.configuration["results_folder"]
+        )
         self.checkpoints.append(disk_path)
 
         return disk_path
 
     def disk_snapshot(self, snapshot_name):
-        snapshot_xml = self.SNAPSHOT_XML.format(snapshot_name,
-                                                'Disk Checkpoint')
+        snapshot_xml = self.SNAPSHOT_XML.format(snapshot_name, "Disk Checkpoint")
         return self.context.domain.snapshotCreateXML(snapshot_xml, 0)
 
     def cleanup(self):
-        if self.configuration.get('delete_checkpoints', False):
+        if self.configuration.get("delete_checkpoints", False):
             for disk in self.checkpoints:
                 os.remove(disk)
 
@@ -160,6 +162,7 @@ class DiskStateAnalyser(Hook):
     to terminate.
 
     """
+
     def __init__(self, parameters):
         super().__init__(parameters)
         self.checkpoints = []
@@ -167,46 +170,49 @@ class DiskStateAnalyser(Hook):
         self.processing_done = Event()
 
     def setup_handlers(self):
-        self.context.subscribe('disk_checkpoint_taken',
-                               self.disk_checkpoint_handler)
+        self.context.subscribe("disk_checkpoint_taken", self.disk_checkpoint_handler)
 
-        if {'start_processing_on_event',
-            'wait_processing_on_event'} <= set(self.configuration):
-            event = self.configuration['start_processing_on_event']
+        if {"start_processing_on_event", "wait_processing_on_event"} <= set(
+            self.configuration
+        ):
+            event = self.configuration["start_processing_on_event"]
             self.context.subscribe_async(event, self.start_processing_handler)
-            self.logger.debug("FileSystem analysis scheduled at %s event",
-                              event)
+            self.logger.debug("FileSystem analysis scheduled at %s event", event)
 
-            event = self.configuration['wait_processing_on_event']
+            event = self.configuration["wait_processing_on_event"]
             self.context.subscribe(event, self.stop_processing_handler)
             self.logger.debug("FileSystem analysis wait at %s event", event)
 
     def disk_checkpoint_handler(self, event):
-        if hasattr(event, 'path'):
-            self.logger.debug("Event %s: new disk checkpoint %s.",
-                              event, event.path)
+        if hasattr(event, "path"):
+            self.logger.debug("Event %s: new disk checkpoint %s.", event, event.path)
             self.checkpoints.append(event.path)
         else:
             self.logging.warning("%s event received, no path specified.")
 
     def start_processing_handler(self, event):
         """Asynchronous handler starting the disk analysis process."""
-        results_path = os.path.join(self.configuration['results_folder'],
-                                    "filesystem.json")
-        self.logger.debug("Event %s: start comparing %s with %s.",
-                          event, self.checkpoints[0], self.checkpoints[1])
+        results_path = os.path.join(
+            self.configuration["results_folder"], "filesystem.json"
+        )
+        self.logger.debug(
+            "Event %s: start comparing %s with %s.",
+            event,
+            self.checkpoints[0],
+            self.checkpoints[1],
+        )
 
-        results = compare_disks(self.checkpoints[0], self.checkpoints[1],
-                                self.configuration)
+        results = compare_disks(
+            self.checkpoints[0], self.checkpoints[1], self.configuration
+        )
 
-        with open(results_path, 'w') as results_file:
+        with open(results_path, "w") as results_file:
             json.dump(results, results_file)
 
         self.processing_done.set()
 
     def stop_processing_handler(self, event):
-        self.logger.debug(
-            "Event %s: waiting for File System state comparison.", event)
+        self.logger.debug("Event %s: waiting for File System state comparison.", event)
         self.processing_done.wait()
         self.logger.info("File System state comparison concluded.")
 
@@ -216,12 +222,22 @@ def snapshot_to_checkpoint(volume, snapshot, folder_path):
     create_folder(folder_path)
 
     name = snapshot.getName()
-    path = os.path.join(folder_path, '%s.qcow2' % name)
+    path = os.path.join(folder_path, "%s.qcow2" % name)
 
-    process = launch_process(QEMU_IMG, "convert", "-f", "qcow2", "-o",
-                             "backing_file=%s" % volume_backing_path(volume),
-                             "-O", "qcow2", "-s", name,
-                             volume_path(volume), path)
+    process = launch_process(
+        QEMU_IMG,
+        "convert",
+        "-f",
+        "qcow2",
+        "-o",
+        "backing_file=%s" % volume_backing_path(volume),
+        "-O",
+        "qcow2",
+        "-s",
+        name,
+        volume_path(volume),
+        path,
+    )
     collect_process_output(process)
 
     return path
@@ -231,20 +247,21 @@ def compare_disks(disk0, disk1, configuration):
     """Compares two disks according to the given configuration."""
     with DiskComparator(disk0, disk1) as comparator:
         results = comparator.compare(
-            size=configuration.get('get_file_size', False),
-            identify=configuration.get('identify_files', False),
-            concurrent=configuration.get('use_concurrency', False))
+            size=configuration.get("get_file_size", False),
+            identify=configuration.get("identify_files", False),
+            concurrent=configuration.get("use_concurrency", False),
+        )
 
-        if configuration.get('extract_files', False):
-            extract = results['created_files'] + results['modified_files']
-            files = comparator.extract(1, extract,
-                                       path=configuration['results_folder'])
+        if configuration.get("extract_files", False):
+            extract = results["created_files"] + results["modified_files"]
+            files = comparator.extract(1, extract, path=configuration["results_folder"])
 
             results.update(files)
 
-        if configuration.get('compare_registries', False):
-            results['registry'] = comparator.compare_registry(
-                concurrent=configuration.get('use_concurrency', False))
+        if configuration.get("compare_registries", False):
+            results["registry"] = comparator.compare_registry(
+                concurrent=configuration.get("use_concurrency", False)
+            )
 
     return results
 
@@ -253,11 +270,11 @@ def volume_path(volume):
     volume_xml = volume.XMLDesc()
     volume_element = etree.fromstring(volume_xml)
 
-    return volume_element.find('.//target/path').text
+    return volume_element.find(".//target/path").text
 
 
 def volume_backing_path(volume):
     volume_xml = volume.XMLDesc()
     volume_element = etree.fromstring(volume_xml)
 
-    return volume_element.find('.//backingStore/path').text
+    return volume_element.find(".//backingStore/path").text

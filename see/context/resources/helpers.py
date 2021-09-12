@@ -42,6 +42,6 @@ def subelement(element, xpath, tag, text, **kwargs):
 
 
 def tag_disk(disk):
-    with open('{}.{}'.format(os.path.realpath(disk), 'lastaccess'), 'w') as touch:
+    with open("{}.{}".format(os.path.realpath(disk), "lastaccess"), "w") as touch:
         touch.write(str(time.time()))
         touch.truncate()

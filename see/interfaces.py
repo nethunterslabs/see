@@ -19,6 +19,7 @@ from see.observer import Observable, Observer
 
 class Context(Observable):
     """Abstract base class for the Context."""
+
     def __init__(self, identifier):
         super(Context, self).__init__(identifier)
 
@@ -28,11 +29,13 @@ class Context(Observable):
 
 class Hook(Observer):
     """Abstract base class for the Hooks."""
+
     def __init__(self, parameters):
         super(Hook, self).__init__(parameters.identifier, parameters.context)
         self.configuration = parameters.configuration
         self.logger = logging.getLogger(
-            '%s.%s' % (self.__module__, self.__class__.__name__))
+            "%s.%s" % (self.__module__, self.__class__.__name__)
+        )
 
     def cleanup(self):
         raise NotImplementedError("Not implemented")
@@ -40,12 +43,14 @@ class Hook(Observer):
 
 class ImageProvider(object):
     """Abstract base class for image provider backends."""
+
     def __init__(self, parameters):
         super(ImageProvider, self).__init__()
-        self.configuration = parameters.get('provider_configuration')
-        self.name = parameters.get('name')
+        self.configuration = parameters.get("provider_configuration")
+        self.name = parameters.get("name")
         self.logger = logging.getLogger(
-            '%s.%s' % (self.__module__, self.__class__.__name__))
+            "%s.%s" % (self.__module__, self.__class__.__name__)
+        )
 
     @property
     def image(self):

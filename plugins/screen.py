@@ -41,12 +41,13 @@ class ScreenHook(Hook):
     or a list of multiple ones.
 
     """
+
     def __init__(self, parameters):
         super().__init__(parameters)
         self.setup_handlers()
 
     def setup_handlers(self):
-        screenshots = self.configuration.get('screenshot_on_event', ())
+        screenshots = self.configuration.get("screenshot_on_event", ())
         events = isinstance(screenshots, str) and [screenshots] or screenshots
 
         for event in events:
@@ -63,12 +64,13 @@ class ScreenHook(Hook):
     def screenshot(self, event):
         self.assert_context_state()
 
-        folder_path = self.configuration['results_folder']
-        screenshot_path = os.path.join(folder_path,
-                                       "%s_%s.ppm" % (self.identifier, event))
+        folder_path = self.configuration["results_folder"]
+        screenshot_path = os.path.join(
+            folder_path, "%s_%s.ppm" % (self.identifier, event)
+        )
         create_folder(folder_path)
 
-        with open(screenshot_path, 'wb') as screenshot_file:
+        with open(screenshot_path, "wb") as screenshot_file:
             screenshot_stream = screenshot(self.context)
             screenshot_file.write(screenshot_stream)
 

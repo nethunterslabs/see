@@ -34,12 +34,14 @@ class TimersHook(Hook):
     Timers are started during Hook's initialization.
 
     """
+
     def __init__(self, parameters):
         super().__init__(parameters)
 
         self.timers = tuple(
-            Timer(t, self.context.trigger, args=(e, ))
-            for e, t in self.configuration.get('timers', {}).items())
+            Timer(t, self.context.trigger, args=(e,))
+            for e, t in self.configuration.get("timers", {}).items()
+        )
 
         for timer in self.timers:
             timer.daemon = True

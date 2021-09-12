@@ -20,9 +20,9 @@ from see.interfaces import Hook
 from see.helpers import lookup_class
 
 
-HookParameters = namedtuple('HookParameters', ('identifier',
-                                               'configuration',
-                                               'context'))
+HookParameters = namedtuple(
+    "HookParameters", ("identifier", "configuration", "context")
+)
 
 
 def hooks_factory(identifier, configuration, context):
@@ -40,38 +40,39 @@ class HookManager(object):
     The Hooks Manager takes care the Hooks allocation, configuration
     and deallocation.
     """
+
     def __init__(self, identifier, configuration):
         self.hooks = []
         self.identifier = identifier
         self.configuration = configuration
         self.logger = logging.getLogger(
-            '%s.%s' % (self.__module__, self.__class__.__name__))
+            "%s.%s" % (self.__module__, self.__class__.__name__)
+        )
 
     def load_hooks(self, context):
         """
         Initializes the Hooks and loads them within the Environment.
         """
-        for hook in self.configuration.get('hooks', ()):
-            config = hook.get('configuration', {})
-            config.update(self.configuration.get('configuration', {}))
+        for hook in self.configuration.get("hooks", ()):
+            config = hook.get("configuration", {})
+            config.update(self.configuration.get("configuration", {}))
 
             try:
-                self._load_hook(hook['name'], config, context)
+                self._load_hook(hook["name"], config, context)
             except KeyError:
-                self.logger.exception('Provided hook has no name: %s.', hook)
+                self.logger.exception("Provided hook has no name: %s.", hook)
 
     def _load_hook(self, name, configuration, context):
-        self.logger.debug('Loading %s hook.', name)
+        self.logger.debug("Loading %s hook.", name)
 
         try:
             HookClass = lookup_hook_class(name)
-            hook = HookClass(HookParameters(self.identifier,
-                                            configuration,
-                                            context))
+            hook = HookClass(HookParameters(self.identifier, configuration, context))
             self.hooks.append(hook)
         except Exception as error:
-            self.logger.exception('Hook %s initialization failure, error: %s.',
-                                  name, error)
+            self.logger.exception(
+                "Hook %s initialization failure, error: %s.", name, error
+            )
 
     def cleanup(self):
         for hook in self.hooks:
@@ -80,8 +81,9 @@ class HookManager(object):
             except NotImplementedError:
                 pass
             except Exception as error:
-                self.logger.exception('Hook %s cleanup error: %s.',
-                                      hook.__class__.__name__, error)
+                self.logger.exception(
+                    "Hook %s cleanup error: %s.", hook.__class__.__name__, error
+                )
 
         self.hooks = []
 

@@ -20,7 +20,7 @@ import io
 def verify_checksum(path, checksum):
     hash_md5 = hashlib.md5()
     block_size = os.statvfs(path).f_bsize
-    with open(path, 'rb') as f:
+    with open(path, "rb") as f:
         while True:
             chunk = f.read(block_size)
             if not chunk:
@@ -33,7 +33,7 @@ def verify_etag(path, etag):
     chunk_size = 8 * 1024 * 1024  # This is AWS chunk size
     chunk_count = 0
     stream = io.BytesIO()
-    with open(path, 'rb') as f:
+    with open(path, "rb") as f:
         while True:
             data = f.read(chunk_size)
             if not data:
@@ -42,6 +42,7 @@ def verify_etag(path, etag):
             chunk_count += 1
     stream.seek(0)
     if chunk_count > 1:
-        return '{}-{}'.format(hashlib.md5(stream.read()).hexdigest(),
-                              chunk_count) == etag
+        return (
+            "{}-{}".format(hashlib.md5(stream.read()).hexdigest(), chunk_count) == etag
+        )
     return hashlib.md5(stream.read()).hexdigest() == etag

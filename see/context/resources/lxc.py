@@ -84,10 +84,10 @@ from see.context.resources.helpers import subelement
 
 
 def mountpoint(mount, identifier):
-    source_path = os.path.join(mount['source_path'], identifier)
+    source_path = os.path.join(mount["source_path"], identifier)
     os.makedirs(source_path)
 
-    return (source_path, mount['target_path'])
+    return (source_path, mount["target_path"])
 
 
 def domain_xml(identifier, xml, mounts, network_name=None):
@@ -106,20 +106,22 @@ def domain_xml(identifier, xml, mounts, network_name=None):
     """
     domain = etree.fromstring(xml)
 
-    subelement(domain, './/name', 'name', identifier)
-    subelement(domain, './/uuid', 'uuid', identifier)
-    devices = subelement(domain, './/devices', 'devices', None)
+    subelement(domain, ".//name", "name", identifier)
+    subelement(domain, ".//uuid", "uuid", identifier)
+    devices = subelement(domain, ".//devices", "devices", None)
 
     for mount in mounts:
-        filesystem = etree.SubElement(devices, 'filesystem', type='mount')
-        etree.SubElement(filesystem, 'source', dir=mount[0])
-        etree.SubElement(filesystem, 'target', dir=mount[1])
+        filesystem = etree.SubElement(devices, "filesystem", type="mount")
+        etree.SubElement(filesystem, "source", dir=mount[0])
+        etree.SubElement(filesystem, "target", dir=mount[1])
 
     if network_name is not None:
-        network = subelement(devices, './/interface[@type="network"]', 'interface', None, type='network')
-        subelement(network, './/source', 'source', None, network=network_name)
+        network = subelement(
+            devices, './/interface[@type="network"]', "interface", None, type="network"
+        )
+        subelement(network, ".//source", "source", None, network=network_name)
 
-    return etree.tostring(domain).decode('utf-8')
+    return etree.tostring(domain).decode("utf-8")
 
 
 def domain_create(hypervisor, identifier, configuration, network_name=None):
@@ -130,17 +132,19 @@ def domain_create(hypervisor, identifier, configuration, network_name=None):
     """
     mounts = []
 
-    with open(configuration['configuration']) as config_file:
+    with open(configuration["configuration"]) as config_file:
         domain_config = config_file.read()
 
-    if 'filesystem' in configuration:
-        if isinstance(configuration['filesystem'], (list, tuple)):
-            for mount in configuration['filesystem']:
+    if "filesystem" in configuration:
+        if isinstance(configuration["filesystem"], (list, tuple)):
+            for mount in configuration["filesystem"]:
                 mounts.append(mountpoint(mount, identifier))
         else:
-            mounts.append(mountpoint(configuration['filesystem'], identifier))
+            mounts.append(mountpoint(configuration["filesystem"], identifier))
 
-    xml_config = domain_xml(identifier, domain_config, tuple(mounts), network_name=network_name)
+    xml_config = domain_xml(
+        identifier, domain_config, tuple(mounts), network_name=network_name
+    )
 
     return hypervisor.defineXML(xml_config)
 
@@ -175,6 +179,7 @@ class LXCResources(resources.Resources):
     Class API is defined in see.context module.
 
     """
+
     def __init__(self, identifier, configuration):
         super(LXCResources, self).__init__(identifier, configuration)
         self._domain = None
@@ -197,26 +202,28 @@ class LXCResources(resources.Resources):
         """Initializes libvirt resources."""
         network_name = None
 
-        self._hypervisor = libvirt.open(
-            self.configuration.get('hypervisor', 'lxc:///'))
+        self._hypervisor = libvirt.open(self.configuration.get("hypervisor", "lxc:///"))
 
-        if 'network' in self.configuration:
-            self._network = network.create(self._hypervisor, self.identifier,
-                                           self.configuration['network'])
+        if "network" in self.configuration:
+            self._network = network.create(
+                self._hypervisor, self.identifier, self.configuration["network"]
+            )
             network_name = self._network.name()
 
-        self._domain = domain_create(self._hypervisor, self.identifier,
-                                     self.configuration['domain'],
-                                     network_name=network_name)
+        self._domain = domain_create(
+            self._hypervisor,
+            self.identifier,
+            self.configuration["domain"],
+            network_name=network_name,
+        )
         if self._network is None:
             self._network = network.lookup(self._domain)
-
 
     def deallocate(self):
         """Releases all resources."""
         if self._domain is not None:
             self._domain_delete()
-        if self._network is not None and 'network' in self.configuration:
+        if self._network is not None and "network" in self.configuration:
             self._network_delete()
         if self._hypervisor is not None:
             self._hypervisor_delete()
@@ -224,10 +231,10 @@ class LXCResources(resources.Resources):
     def _domain_delete(self):
         filesystem = None
 
-        if 'filesystem' in self.configuration:
+        if "filesystem" in self.configuration:
             filesystem = os.path.join(
-                self.configuration['filesystem']['source_path'],
-                self.identifier)
+                self.configuration["filesystem"]["source_path"], self.identifier
+            )
 
         domain_delete(self._domain, self.logger, filesystem)
 

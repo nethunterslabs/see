@@ -11,9 +11,8 @@ from see.context.resources import network
 
 def compare(text1, text2):
     """Utility function for comparing text and returning differences."""
-    diff = difflib.ndiff(str(text1).splitlines(True),
-                         str(text2).splitlines(True))
-    return '\n' + '\n'.join(diff)
+    diff = difflib.ndiff(str(text1).splitlines(True), str(text2).splitlines(True))
+    return "\n" + "\n".join(diff)
 
 
 class NetworkXMLTest(unittest.TestCase):
@@ -36,7 +35,7 @@ class NetworkXMLTest(unittest.TestCase):
             </dhcp>
           </ip>
         <name>foo</name><uuid>foo</uuid><bridge name="virbr-foo" /></network>"""
-        results = network.network_xml('foo', config)
+        results = network.network_xml("foo", config)
         self.assertEqual(results, expected, compare(results, expected))
 
     def test_ip_modifies(self):
@@ -64,7 +63,7 @@ class NetworkXMLTest(unittest.TestCase):
             </dhcp>
           </ip>
         </network>"""
-        results = network.network_xml('foo', config)
+        results = network.network_xml("foo", config)
         self.assertEqual(results, expected, compare(results, expected))
 
     def test_ip_address(self):
@@ -79,7 +78,7 @@ class NetworkXMLTest(unittest.TestCase):
         </network>
         """
         with self.assertRaises(RuntimeError):
-            network.network_xml('foo', config, address=True)
+            network.network_xml("foo", config, address=True)
 
     def test_no_ip_address(self):
         """NETWORK XML with address."""
@@ -87,14 +86,16 @@ class NetworkXMLTest(unittest.TestCase):
           <forward mode="nat"/>
         </network>
         """
-        expected = """<network>
+        expected = (
+            """<network>
           <forward mode="nat" />
-        <name>foo</name><uuid>foo</uuid><bridge name="virbr-foo" />""" + \
-            """<ip address="192.168.1.1" netmask="255.255.255.0">""" + \
-            """<dhcp><range end="192.168.1.254" start="192.168.1.2" />""" +\
-            """</dhcp></ip></network>"""
-        address = ipaddress.IPv4Network(u'192.168.1.0/24')
-        results = network.network_xml('foo', config, address=address)
+        <name>foo</name><uuid>foo</uuid><bridge name="virbr-foo" />"""
+            + """<ip address="192.168.1.1" netmask="255.255.255.0">"""
+            + """<dhcp><range end="192.168.1.254" start="192.168.1.2" />"""
+            + """</dhcp></ip></network>"""
+        )
+        address = ipaddress.IPv4Network(u"192.168.1.0/24")
+        results = network.network_xml("foo", config, address=address)
         self.assertEqual(results, expected, compare(results, expected))
 
 
@@ -104,35 +105,36 @@ class ValidAddressTest(unittest.TestCase):
         virnetwork = mock.Mock()
         hypervisor = mock.Mock()
         virnetwork.XMLDesc.side_effect = (
-            lambda x:
-            '<a><ip address="192.168.%s.1" netmask="255.255.255.0"/></a>'
-            % random.randint(1, 255))
-        hypervisor.listNetworks.return_value = ('foo', 'bar', 'baz')
+            lambda x: '<a><ip address="192.168.%s.1" netmask="255.255.255.0"/></a>'
+            % random.randint(1, 255)
+        )
+        hypervisor.listNetworks.return_value = ("foo", "bar", "baz")
         hypervisor.networkLookupByName.return_value = virnetwork
-        configuration = {'ipv4': '192.168.0.0',
-                         'prefix': 16,
-                         'subnet_prefix': 24}
+        configuration = {"ipv4": "192.168.0.0", "prefix": 16, "subnet_prefix": 24}
 
-        self.assertTrue(network.generate_address(hypervisor, configuration) in
-                        [ipaddress.IPv4Network(u'192.168.{}.0/24'.format(i))
-                         for i in range(1, 255)])
+        self.assertTrue(
+            network.generate_address(hypervisor, configuration)
+            in [
+                ipaddress.IPv4Network(u"192.168.{}.0/24".format(i))
+                for i in range(1, 255)
+            ]
+        )
 
     def test_randomised(self):
         """NETWORK Address generation is randomised."""
         virnetwork = mock.Mock()
         hypervisor = mock.Mock()
         virnetwork.XMLDesc.side_effect = (
-            lambda x:
-            '<a><ip address="192.168.%s.1" netmask="255.255.255.0"/></a>'
-            % random.randint(1, 255))
-        hypervisor.listNetworks.return_value = ('foo', 'bar', 'baz')
+            lambda x: '<a><ip address="192.168.%s.1" netmask="255.255.255.0"/></a>'
+            % random.randint(1, 255)
+        )
+        hypervisor.listNetworks.return_value = ("foo", "bar", "baz")
         hypervisor.networkLookupByName.return_value = virnetwork
-        configuration = {'ipv4': '192.168.0.0',
-                         'prefix': 16,
-                         'subnet_prefix': 24}
+        configuration = {"ipv4": "192.168.0.0", "prefix": 16, "subnet_prefix": 24}
 
-        addresses = set(network.generate_address(hypervisor, configuration)
-                        for _ in range(10))
+        addresses = set(
+            network.generate_address(hypervisor, configuration) for _ in range(10)
+        )
 
         self.assertTrue(len(addresses) > 1)
 
@@ -141,14 +143,12 @@ class ValidAddressTest(unittest.TestCase):
         virnetwork = mock.Mock()
         hypervisor = mock.Mock()
         virnetwork.XMLDesc.side_effect = (
-            lambda x:
-            '<a><ip address="192.168.%s.1" netmask="255.255.255.0"/></a>'
-            % random.randint(1, 255))
-        hypervisor.listNetworks.return_value = ('foo', 'bar', 'baz')
+            lambda x: '<a><ip address="192.168.%s.1" netmask="255.255.255.0"/></a>'
+            % random.randint(1, 255)
+        )
+        hypervisor.listNetworks.return_value = ("foo", "bar", "baz")
         hypervisor.networkLookupByName.return_value = virnetwork
-        configuration = {'ipv4': '192.168.0.1',
-                         'prefix': 16,
-                         'subnet_prefix': 24}
+        configuration = {"ipv4": "192.168.0.1", "prefix": 16, "subnet_prefix": 24}
 
         with self.assertRaises(ValueError):
             network.generate_address(hypervisor, configuration)
@@ -159,14 +159,12 @@ class ValidAddressTest(unittest.TestCase):
         virnetwork = mock.Mock()
         hypervisor = mock.Mock()
         virnetwork.XMLDesc.side_effect = (
-            lambda x:
-            '<a><ip address="192.168.%s.1" netmask="255.255.255.0"/></a>'
-            % next(counter))
+            lambda x: '<a><ip address="192.168.%s.1" netmask="255.255.255.0"/></a>'
+            % next(counter)
+        )
         hypervisor.listNetworks.return_value = range(0, 256)
         hypervisor.networkLookupByName.return_value = virnetwork
-        configuration = {'ipv4': '192.168.0.0',
-                         'prefix': 16,
-                         'subnet_prefix': 24}
+        configuration = {"ipv4": "192.168.0.0", "prefix": 16, "subnet_prefix": 24}
 
         with self.assertRaises(RuntimeError):
             network.generate_address(hypervisor, configuration)
@@ -179,33 +177,47 @@ class CreateTest(unittest.TestCase):
         network.MAX_ATTEMPTS = 3
         hypervisor = mock.Mock()
         hypervisor.listNetworks.return_value = []
-        hypervisor.networkCreateXML.side_effect = libvirt.libvirtError('BOOM')
-        configuration = {'configuration': 'bar',
-                         'dynamic_address': {'ipv4': '10.0.0.0',
-                                             'prefix': 16,
-                                             'subnet_prefix': 24}}
+        hypervisor.networkCreateXML.side_effect = libvirt.libvirtError("BOOM")
+        configuration = {
+            "configuration": "bar",
+            "dynamic_address": {"ipv4": "10.0.0.0", "prefix": 16, "subnet_prefix": 24},
+        }
 
-        with mock.patch('see.context.resources.network.open',
-                        mock.mock_open(read_data=xml), create=True):
+        with mock.patch(
+            "see.context.resources.network.open",
+            mock.mock_open(read_data=xml),
+            create=True,
+        ):
             try:
-                network.create(hypervisor, 'foo', configuration)
+                network.create(hypervisor, "foo", configuration)
             except RuntimeError as error:
                 self.assertEqual(
                     error.args,
-                    ("Exceeded failed attempts (3) to get IP address.",
-                     "Last error: BOOM"))
+                    (
+                        "Exceeded failed attempts (3) to get IP address.",
+                        "Last error: BOOM",
+                    ),
+                )
 
     def test_create_xml(self):
         """NETWORK Provided XML is used."""
-        xml = """<network><forward mode="nat"/><ip address="192.168.1.1" netmask="255.255.255.0">""" + \
-              """<dhcp><range end="192.168.1.128" start="192.168.1.2"/></dhcp></ip></network>"""
-        expected = """<network><forward mode="nat" /><ip address="192.168.1.1" netmask="255.255.255.0">""" + \
-            """<dhcp><range end="192.168.1.128" start="192.168.1.2" /></dhcp></ip>""" + \
-            """<name>foo</name><uuid>foo</uuid><bridge name="virbr-foo" /></network>"""
+        xml = (
+            """<network><forward mode="nat"/><ip address="192.168.1.1" netmask="255.255.255.0">"""
+            + """<dhcp><range end="192.168.1.128" start="192.168.1.2"/></dhcp></ip></network>"""
+        )
+        expected = (
+            """<network><forward mode="nat" /><ip address="192.168.1.1" netmask="255.255.255.0">"""
+            + """<dhcp><range end="192.168.1.128" start="192.168.1.2" /></dhcp></ip>"""
+            + """<name>foo</name><uuid>foo</uuid><bridge name="virbr-foo" /></network>"""
+        )
         hypervisor = mock.Mock()
         hypervisor.listNetworks.return_value = []
-        with mock.patch('see.context.resources.network.open', mock.mock_open(read_data=xml), create=True):
-            network.create(hypervisor, 'foo', {'configuration': '/foo'})
+        with mock.patch(
+            "see.context.resources.network.open",
+            mock.mock_open(read_data=xml),
+            create=True,
+        ):
+            network.create(hypervisor, "foo", {"configuration": "/foo"})
         results = hypervisor.networkCreateXML.call_args_list[0][0][0]
         self.assertEqual(results, expected, compare(results, expected))
 
@@ -214,31 +226,44 @@ class CreateTest(unittest.TestCase):
         expected = """<forward mode="nat" />"""
         hypervisor = mock.Mock()
         hypervisor.listNetworks.return_value = []
-        network.create(hypervisor, 'foo', {'dynamic_address':
-                                           {'ipv4': '192.168.0.0',
-                                            'prefix': 16,
-                                            'subnet_prefix': 24}})
+        network.create(
+            hypervisor,
+            "foo",
+            {
+                "dynamic_address": {
+                    "ipv4": "192.168.0.0",
+                    "prefix": 16,
+                    "subnet_prefix": 24,
+                }
+            },
+        )
         results = hypervisor.networkCreateXML.call_args_list[0][0][0]
 
         self.assertTrue(expected in results, compare(results, expected))
 
     def test_create_xml_error(self):
         """NETWORK RuntimeError is raised in case of creation error."""
-        xml = """<network><forward mode="nat"/><ip address="192.168.1.1" netmask="255.255.255.0">""" + \
-              """<dhcp><range end="192.168.1.128" start="192.168.1.2"/></dhcp></ip></network>"""
+        xml = (
+            """<network><forward mode="nat"/><ip address="192.168.1.1" netmask="255.255.255.0">"""
+            + """<dhcp><range end="192.168.1.128" start="192.168.1.2"/></dhcp></ip></network>"""
+        )
         hypervisor = mock.Mock()
         hypervisor.listNetworks.return_value = []
-        hypervisor.networkCreateXML.side_effect = libvirt.libvirtError('BOOM')
-        with mock.patch('see.context.resources.network.open', mock.mock_open(read_data=xml), create=True):
+        hypervisor.networkCreateXML.side_effect = libvirt.libvirtError("BOOM")
+        with mock.patch(
+            "see.context.resources.network.open",
+            mock.mock_open(read_data=xml),
+            create=True,
+        ):
             with self.assertRaises(RuntimeError) as error:
-                network.create(hypervisor, 'foo', {'configuration': '/foo'})
+                network.create(hypervisor, "foo", {"configuration": "/foo"})
                 self.assertEqual(str(error), "Unable to create new network: BOOM.")
 
     def test_create_empty_config(self):
         """NETWORK RuntimeError raised if empty configuration."""
         hypervisor = mock.Mock()
         with self.assertRaises(RuntimeError):
-            network.create(hypervisor, 'foo', {})
+            network.create(hypervisor, "foo", {})
 
     def test_delete(self):
         """NETWORK Network is destroyed on delete()."""
@@ -250,15 +275,17 @@ class CreateTest(unittest.TestCase):
 class LookupTest(unittest.TestCase):
     def test_lookup(self):
         """NETWORK Network lookup passes correct parameters to hypervisor."""
-        xml = """<domain><interface type="network">""" +\
-              """<source network="foo" /></interface></domain>"""
+        xml = (
+            """<domain><interface type="network">"""
+            + """<source network="foo" /></interface></domain>"""
+        )
         domain = mock.Mock()
         hypervisor = mock.Mock()
         domain.XMLDesc.return_value = xml
         domain.connect.return_value = hypervisor
 
         network.lookup(domain)
-        hypervisor.networkLookupByName.assert_called_with('foo')
+        hypervisor.networkLookupByName.assert_called_with("foo")
 
     def test_lookup_no_network(self):
         """NETWORK None is return if domain is not associated with any Network."""

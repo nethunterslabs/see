@@ -43,27 +43,30 @@ POOL_CONFIG_XML = """
 
 
 class LibvirtPoolProvider(ImageProvider):
-
     def __init__(self, parameters):
         super(LibvirtPoolProvider, self).__init__(parameters)
 
     @property
     def image(self):
-        path = "%s/%s" % (self.configuration.get(
-            'storage_pool_path').rstrip('/'), self.name.lstrip('/'))
+        path = "%s/%s" % (
+            self.configuration.get("storage_pool_path").rstrip("/"),
+            self.name.lstrip("/"),
+        )
 
         if not os.path.exists(path):
             raise FileNotFoundError(path)
 
         hypervisor = libvirt.open(
-            self.configuration.get('hypervisor', 'qemu:///system'))
+            self.configuration.get("hypervisor", "qemu:///system")
+        )
 
         try:
             volume = hypervisor.storageVolLookupByPath(path)
             return volume.path()
         except libvirt.libvirtError:
-            pool = hypervisor.storagePoolDefineXML(POOL_CONFIG_XML.format(
-                self.configuration.get('storage_pool_path')))
+            pool = hypervisor.storagePoolDefineXML(
+                POOL_CONFIG_XML.format(self.configuration.get("storage_pool_path"))
+            )
             pool.setAutostart(True)
             pool.create()
             pool.refresh()

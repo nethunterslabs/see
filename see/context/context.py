@@ -30,23 +30,21 @@ SHUTOFF = 5
 CRASHED = 6
 SUSPENDED = 7
 
-STATES_MAP = {NOSTATE: (),
-              RUNNING: ('pause',
-                        'poweroff',
-                        'forced_poweroff',
-                        'restart',
-                        'shutdown'),
-              BLOCKED: (),
-              PAUSED: ('resume',
-                       'forced_poweroff'),
-              SHUTDOWN: ('poweron'),
-              SHUTOFF: ('poweron'),
-              CRASHED: ('poweron'),
-              SUSPENDED: ('resume')}
+STATES_MAP = {
+    NOSTATE: (),
+    RUNNING: ("pause", "poweroff", "forced_poweroff", "restart", "shutdown"),
+    BLOCKED: (),
+    PAUSED: ("resume", "forced_poweroff"),
+    SHUTDOWN: ("poweron"),
+    SHUTOFF: ("poweron"),
+    CRASHED: ("poweron"),
+    SUSPENDED: ("resume"),
+}
 
 
 class QEMUContextFactory(object):
     """Builds a SeeContext object based on QEMUResources."""
+
     def __init__(self, configuration):
         self.configuration = load_configuration(configuration)
 
@@ -66,6 +64,7 @@ class QEMUContextFactory(object):
 
 class LXCContextFactory(object):
     """Builds a SeeContext object based on LXCResources."""
+
     def __init__(self, configuration):
         self.configuration = load_configuration(configuration)
 
@@ -85,6 +84,7 @@ class LXCContextFactory(object):
 
 class VBoxContextFactory(object):
     """Builds a SeeContext object based on VBoxResources."""
+
     def __init__(self, configuration):
         self.configuration = load_configuration(configuration)
 
@@ -116,6 +116,7 @@ class SeeContext(Context):
     the installed plugins.
 
     """
+
     def __init__(self, identifier, resources):
         super(SeeContext, self).__init__(identifier)
         self._resources = resources
@@ -172,7 +173,7 @@ class SeeContext(Context):
         conf = etree.fromstring(self.domain.XMLDesc())
         mac_element = conf.find('.//devices/interface[@type="network"]/mac')
 
-        return mac_element is not None and mac_element.get('address') or None
+        return mac_element is not None and mac_element.get("address") or None
 
     @property
     def ip4_address(self):
@@ -183,8 +184,7 @@ class SeeContext(Context):
 
         """
         if self._ip4_address is None and self.network is not None:
-            self._ip4_address = self._get_ip_address(
-                libvirt.VIR_IP_ADDR_TYPE_IPV4)
+            self._ip4_address = self._get_ip_address(libvirt.VIR_IP_ADDR_TYPE_IPV4)
 
         return self._ip4_address
 
@@ -197,8 +197,7 @@ class SeeContext(Context):
 
         """
         if self._ip6_address is None and self.network is not None:
-            self._ip6_address = self._get_ip_address(
-                libvirt.VIR_IP_ADDR_TYPE_IPV6)
+            self._ip6_address = self._get_ip_address(libvirt.VIR_IP_ADDR_TYPE_IPV6)
 
         return self._ip6_address
 
@@ -207,15 +206,16 @@ class SeeContext(Context):
 
         try:
             interfaces = self.domain.interfaceAddresses(
-                libvirt.VIR_DOMAIN_INTERFACE_ADDRESSES_SRC_LEASE)
+                libvirt.VIR_DOMAIN_INTERFACE_ADDRESSES_SRC_LEASE
+            )
         except AttributeError:  # libvirt < 1.3.0
             pass
         else:
             return interface_lookup(interfaces, mac, address_type)
 
         for lease in self.network.DHCPLeases():
-            if mac == lease.get('mac') and lease.get('type') == address_type:
-                return lease.get('ipaddr')
+            if mac == lease.get("mac") and lease.get("type") == address_type:
+                return lease.get("ipaddr")
 
     def poweron(self, **kwargs):
         """
@@ -228,7 +228,7 @@ class SeeContext(Context):
         @param kwargs: keyword arguments to pass altogether with the events.
 
         """
-        self._command('poweron', self.domain.create, **kwargs)
+        self._command("poweron", self.domain.create, **kwargs)
 
     def resume(self, **kwargs):
         """
@@ -241,7 +241,7 @@ class SeeContext(Context):
         @param kwargs: keyword arguments to pass altogether with the events.
 
         """
-        self._command('resume', self.domain.resume, **kwargs)
+        self._command("resume", self.domain.resume, **kwargs)
 
     def pause(self, **kwargs):
         """
@@ -254,7 +254,7 @@ class SeeContext(Context):
         @param kwargs: keyword arguments to pass altogether with the events.
 
         """
-        self._command('pause', self.domain.suspend, **kwargs)
+        self._command("pause", self.domain.suspend, **kwargs)
 
     def poweroff(self, **kwargs):
         """
@@ -267,7 +267,7 @@ class SeeContext(Context):
         @param kwargs: keyword arguments to pass altogether with the events.
 
         """
-        self._command('poweroff', self.domain.destroy, **kwargs)
+        self._command("poweroff", self.domain.destroy, **kwargs)
 
     def shutdown(self, timeout=None, **kwargs):
         """
@@ -288,11 +288,11 @@ class SeeContext(Context):
         @param kwargs: keyword arguments to pass altogether with the events.
 
         """
-        self._assert_transition('shutdown')
-        self.trigger('pre_shutdown', **kwargs)
+        self._assert_transition("shutdown")
+        self.trigger("pre_shutdown", **kwargs)
         self._execute_command(self.domain.shutdown)
         self._wait_for_shutdown(timeout)
-        self.trigger('post_shutdown', **kwargs)
+        self.trigger("post_shutdown", **kwargs)
 
     def _wait_for_shutdown(self, timeout):
         if timeout is not None:
@@ -320,7 +320,7 @@ class SeeContext(Context):
         @param kwargs: keyword arguments to pass altogether with the events.
 
         """
-        self._command('restart', self.domain.reboot, 0, **kwargs)
+        self._command("restart", self.domain.reboot, 0, **kwargs)
 
     def _command(self, event, command, *args, **kwargs):
         """
@@ -335,9 +335,9 @@ class SeeContext(Context):
 
         """
         self._assert_transition(event)
-        self.trigger('pre_%s' % event, **kwargs)
+        self.trigger("pre_%s" % event, **kwargs)
         self._execute_command(command, *args)
-        self.trigger('post_%s' % event, **kwargs)
+        self.trigger("post_%s" % event, **kwargs)
 
     def _assert_transition(self, event):
         """Asserts the state transition validity."""
@@ -356,13 +356,13 @@ class SeeContext(Context):
 def interface_lookup(interfaces, hwaddr, address_type):
     """Search the address within the interface list."""
     for interface in interfaces.values():
-        if interface.get('hwaddr') == hwaddr:
-            for address in interface.get('addrs'):
-                if address.get('type') == address_type:
-                    return address.get('addr')
+        if interface.get("hwaddr") == hwaddr:
+            for address in interface.get("addrs"):
+                if address.get("type") == address_type:
+                    return address.get("addr")
 
 
 # libvirt < 1.2.6
-if not hasattr(libvirt, 'VIR_IP_ADDR_TYPE_IPV4'):
+if not hasattr(libvirt, "VIR_IP_ADDR_TYPE_IPV4"):
     libvirt.VIR_IP_ADDR_TYPE_IPV4 = 0
     libvirt.VIR_IP_ADDR_TYPE_IPV6 = 1

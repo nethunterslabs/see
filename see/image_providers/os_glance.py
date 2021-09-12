@@ -47,7 +47,6 @@ except NameError:
 
 
 class GlanceProvider(ImageProvider):
-
     def __init__(self, parameters):
         super(GlanceProvider, self).__init__(parameters)
         self._os_session = None
@@ -58,27 +57,29 @@ class GlanceProvider(ImageProvider):
         try:
             metadata = self._retrieve_metadata()
         except FileNotFoundError:
-            if os.path.exists(self.configuration['path']):
-                if os.path.isfile(os.path.realpath(self.configuration['path'])):
-                    return self.configuration['path']
+            if os.path.exists(self.configuration["path"]):
+                if os.path.isfile(os.path.realpath(self.configuration["path"])):
+                    return self.configuration["path"]
                 else:
                     for image in self._find_potentials():
-                        tgt = os.path.join(self.configuration['path'], image.id)
+                        tgt = os.path.join(self.configuration["path"], image.id)
                         if os.path.exists(tgt):
                             return tgt
             raise
 
-        if (os.path.exists(self.configuration['path']) and
-                os.path.isfile(os.path.realpath(
-                    self.configuration['path'])) and
-                datetime.fromtimestamp(os.path.getmtime(
-                    self.configuration['path'])) >
-                datetime.strptime(metadata.updated_at, "%Y-%m-%dT%H:%M:%SZ")):
-            return self.configuration['path']
+        if (
+            os.path.exists(self.configuration["path"])
+            and os.path.isfile(os.path.realpath(self.configuration["path"]))
+            and datetime.fromtimestamp(os.path.getmtime(self.configuration["path"]))
+            > datetime.strptime(metadata.updated_at, "%Y-%m-%dT%H:%M:%SZ")
+        ):
+            return self.configuration["path"]
 
-        target = (self.configuration['path']
-                  if os.path.isfile(self.configuration['path'])
-                  else os.path.join(self.configuration['path'], metadata.id))
+        target = (
+            self.configuration["path"]
+            if os.path.isfile(self.configuration["path"])
+            else os.path.join(self.configuration["path"], metadata.id)
+        )
 
         os.makedirs(os.path.dirname(os.path.realpath(target)), exist_ok=True)
 
@@ -91,63 +92,86 @@ class GlanceProvider(ImageProvider):
             from keystoneauth1.session import Session
 
             self._os_session = Session(
-                auth=v3.Password(**self.configuration['os_auth']),
-                verify=self.configuration['session'].get('cacert', False),
-                cert=self.configuration['session'].get('cert'))
+                auth=v3.Password(**self.configuration["os_auth"]),
+                verify=self.configuration["session"].get("cacert", False),
+                cert=self.configuration["session"].get("cert"),
+            )
         return self._os_session
 
     @property
     def glance_client(self):
         if self._glance_client is None:
             from glanceclient.v2.client import Client as Gclient
+
             self._glance_client = Gclient(session=self.os_session)
         return self._glance_client
 
     def _find_potentials(self):
         return sorted(
-            [image for image in self.glance_client.images.list(
-                filters={'name': self.name})
-             if image.status != 'active'],
-            key=lambda x: x.updated_at, reverse=True)
+            [
+                image
+                for image in self.glance_client.images.list(filters={"name": self.name})
+                if image.status != "active"
+            ],
+            key=lambda x: x.updated_at,
+            reverse=True,
+        )
 
     def _retrieve_metadata(self):
         try:
-            return sorted([image for image in self.glance_client.images.list(
-                filters={'name': self.name, 'status': 'active'})],
-                          key=lambda x: x.updated_at, reverse=True)[0]
+            return sorted(
+                [
+                    image
+                    for image in self.glance_client.images.list(
+                        filters={"name": self.name, "status": "active"}
+                    )
+                ],
+                key=lambda x: x.updated_at,
+                reverse=True,
+            )[0]
         except IndexError:
             raise FileNotFoundError(self.name)
 
     def _download_image(self, img_metadata, target):
         def _older_image():
             for image in sorted(
-                    [image for image in self.glance_client.images.list(
-                        filters={'name': self.name})
-                     if image.status in ('active', 'deactivated')],
-                    key=lambda x: x.updated_at, reverse=True):
+                [
+                    image
+                    for image in self.glance_client.images.list(
+                        filters={"name": self.name}
+                    )
+                    if image.status in ("active", "deactivated")
+                ],
+                key=lambda x: x.updated_at,
+                reverse=True,
+            ):
                 newtarget = os.path.join(os.path.dirname(target), image.id)
                 if os.path.exists(newtarget):
                     return newtarget
-            raise FileNotFoundError('No viable images available')
+            raise FileNotFoundError("No viable images available")
 
-        partfile = '{}.part'.format(target)
+        partfile = "{}.part".format(target)
         if os.path.exists(partfile):
             return _older_image()
         if not os.path.exists(target):
             img_downloader = self.glance_client.images.data(img_metadata.id)
-            with open(partfile, 'wb') as imagefile:
+            with open(partfile, "wb") as imagefile:
                 for chunk in img_downloader:
                     imagefile.write(chunk)
             if not verify_checksum(partfile, img_metadata.checksum):
                 os.remove(partfile)
-                raise RuntimeError('Checksum failure. File: %s' % target)
+                raise RuntimeError("Checksum failure. File: %s" % target)
             os.rename(partfile, target)
-            if self.configuration.get('libvirt_pool'):
+            if self.configuration.get("libvirt_pool"):
                 import libvirt
+
                 hypervisor = libvirt.open(
-                    self.configuration['libvirt_pool'].get('hypervisor',
-                                                           'qemu:///system'))
+                    self.configuration["libvirt_pool"].get(
+                        "hypervisor", "qemu:///system"
+                    )
+                )
                 pool = hypervisor.storagePoolLookupByName(
-                    self.configuration['libvirt_pool']['name'])
+                    self.configuration["libvirt_pool"]["name"]
+                )
                 pool.refresh()
         return target

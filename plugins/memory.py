@@ -56,13 +56,14 @@ class MemoryHook(Hook):
     at the end of the execution. Default to False.
 
     """
+
     def __init__(self, parameters):
         super().__init__(parameters)
         self.memdumps = []
         self.setup_handlers()
 
     def setup_handlers(self):
-        snapshots = self.configuration.get('memory_snapshots_on_event', ())
+        snapshots = self.configuration.get("memory_snapshots_on_event", ())
         events = isinstance(snapshots, str) and [snapshots] or snapshots
 
         for event in events:
@@ -78,12 +79,12 @@ class MemoryHook(Hook):
         self.logger.info("Memory snapshot %s taken.", snapshot_path)
 
     def memory_snapshot(self, event):
-        folder_path = self.configuration['results_folder']
+        folder_path = self.configuration["results_folder"]
         file_name = "%s_%s.bin%s" % (
             event,
             datetime.now().replace(microsecond=0).time().strftime("%H%M%S"),
-            self.configuration.get('compress_snapshots', False)
-            and '.gz' or '')
+            self.configuration.get("compress_snapshots", False) and ".gz" or "",
+        )
         snapshot_path = os.path.join(folder_path, file_name)
 
         create_folder(folder_path)
@@ -93,8 +94,11 @@ class MemoryHook(Hook):
 
     def dump_memory(self, memory_dump_path):
         self.assert_context_state()
-        memory_snapshot(self.context, memory_dump_path,
-                        self.configuration.get('compress_snapshots', False))
+        memory_snapshot(
+            self.context,
+            memory_dump_path,
+            self.configuration.get("compress_snapshots", False),
+        )
 
         self.memdumps.append(memory_dump_path)
 
@@ -103,7 +107,7 @@ class MemoryHook(Hook):
             raise RuntimeError("Context must be paused during memory snapshot")
 
     def cleanup(self):
-        if self.configuration.get('delete_snapshots', False):
+        if self.configuration.get("delete_snapshots", False):
             for memdump in self.memdumps:
                 os.remove(memdump)
 
@@ -139,6 +143,7 @@ class VolatilityHook(Hook):
     command.
 
     """
+
     def __init__(self, parameters):
         super().__init__(parameters)
         self.snapshots = []
@@ -146,23 +151,22 @@ class VolatilityHook(Hook):
         self.processing_done = Event()
 
     def setup_handlers(self):
-        self.context.subscribe('memory_snapshot_taken',
-                               self.memory_snapshot_handler)
+        self.context.subscribe("memory_snapshot_taken", self.memory_snapshot_handler)
 
-        if {'start_processing_on_event',
-            'wait_processing_on_event'} <= set(self.configuration):
-            event = self.configuration['start_processing_on_event']
+        if {"start_processing_on_event", "wait_processing_on_event"} <= set(
+            self.configuration
+        ):
+            event = self.configuration["start_processing_on_event"]
             self.context.subscribe_async(event, self.start_processing_handler)
             self.logger.debug("Volatility scheduled at %s event", event)
 
-            event = self.configuration['wait_processing_on_event']
+            event = self.configuration["wait_processing_on_event"]
             self.context.subscribe(event, self.stop_processing_handler)
             self.logger.debug("Volatility processing wait at %s event", event)
 
     def memory_snapshot_handler(self, event):
-        if hasattr(event, 'path'):
-            self.logger.debug("Event %s: new memory dump %s.",
-                              event, event.path)
+        if hasattr(event, "path"):
+            self.logger.debug("Event %s: new memory dump %s.", event, event.path)
             self.snapshots.append(event.path)
         else:
             self.logging.warning("%s event received, no path specified.")
@@ -177,24 +181,23 @@ class VolatilityHook(Hook):
         self.processing_done.set()
 
     def process_snapshot(self, snapshot):
-        profile = self.configuration.get('profile', ())
+        profile = self.configuration.get("profile", ())
 
-        for plugin in self.configuration.get('plugins', ()):
+        for plugin in self.configuration.get("plugins", ()):
             try:
                 process_memory_snapshot(snapshot, profile, plugin)
             except RuntimeError:
                 self.logger.exception("Unable to run %s plugin.", plugin)
 
     def stop_processing_handler(self, event):
-        self.logger.debug("Event %s: waiting for Volatility process(es).",
-                          event)
+        self.logger.debug("Event %s: waiting for Volatility process(es).", event)
         self.processing_done.wait()
         self.logger.info("Done processing memory with Volatility.")
 
 
 def memory_snapshot(context, memory_dump_path, compress):
     # fix issue with libvirt's API
-    open(memory_dump_path, 'a').close()  # touch file to set permissions
+    open(memory_dump_path, "a").close()  # touch file to set permissions
 
     dump_flag = libvirt.VIR_DUMP_MEMORY_ONLY
     if compress:
@@ -206,10 +209,9 @@ def memory_snapshot(context, memory_dump_path, compress):
 
 
 def process_memory_snapshot(snapshot_path, profile, plugin):
-    process = launch_process('volatility',
-                             '--profile=%s' % profile,
-                             '--filename=%s' % snapshot_path,
-                             plugin)
-    file_name = '%s_%s.log' % (snapshot_path.split('.')[0], plugin)
+    process = launch_process(
+        "volatility", "--profile=%s" % profile, "--filename=%s" % snapshot_path, plugin
+    )
+    file_name = "%s_%s.log" % (snapshot_path.split(".")[0], plugin)
 
     collect_process_output(process, file_name)

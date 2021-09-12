@@ -21,6 +21,7 @@ class Event(str):
     Represented as a string which can carry extra information as attributes.
 
     """
+
     def __new__(cls, event, source=None, **kwargs):
         cls._source = source
         cls._timestamp = time.time()

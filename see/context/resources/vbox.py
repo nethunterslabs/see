@@ -57,20 +57,20 @@ from see.context.resources.helpers import subelement, tag_disk
 def domain_xml(identifier, xml, disk_path):
     """Fills the XML file with the required fields.
 
-     * name
-     * uuid
-     * devices
+    * name
+    * uuid
+    * devices
 
     """
     domain = etree.fromstring(xml)
 
-    subelement(domain, './/name', 'name', identifier)
-    subelement(domain, './/uuid', 'uuid', identifier)
-    devices = subelement(domain, './/devices', 'devices', None)
-    disk = subelement(devices, './/disk', 'disk', None, type='file', device='disk')
-    subelement(disk, './/source', 'source', None, file=disk_path)
+    subelement(domain, ".//name", "name", identifier)
+    subelement(domain, ".//uuid", "uuid", identifier)
+    devices = subelement(domain, ".//devices", "devices", None)
+    disk = subelement(devices, ".//disk", "disk", None, type="file", device="disk")
+    subelement(disk, ".//source", "source", None, file=disk_path)
 
-    return etree.tostring(domain).decode('utf-8')
+    return etree.tostring(domain).decode("utf-8")
 
 
 def domain_create(hypervisor, identifier, configuration, disk_path):
@@ -79,7 +79,7 @@ def domain_create(hypervisor, identifier, configuration, disk_path):
     @raise: ConfigError, IOError, libvirt.libvirtError.
 
     """
-    with open(configuration['configuration']) as config_file:
+    with open(configuration["configuration"]) as config_file:
         domain_config = config_file.read()
 
     xml = domain_xml(identifier, domain_config, disk_path)
@@ -103,7 +103,9 @@ def domain_delete(domain, logger):
             domain.undefine()
         except libvirt.libvirtError:
             try:
-                domain.undefineFlags(libvirt.VIR_DOMAIN_UNDEFINE_SNAPSHOTS_METADATA)  # domain with snapshots
+                domain.undefineFlags(
+                    libvirt.VIR_DOMAIN_UNDEFINE_SNAPSHOTS_METADATA
+                )  # domain with snapshots
             except libvirt.libvirtError:
                 logger.exception("Unable to undefine the domain.")
 
@@ -115,6 +117,7 @@ class VBoxResources(resources.Resources):
     exposing a clean way to initialize and clean them up.
 
     """
+
     def __init__(self, identifier, configuration):
         super(VBoxResources, self).__init__(identifier, configuration)
         self._domain = None
@@ -134,10 +137,12 @@ class VBoxResources(resources.Resources):
         tag_disk(self.provider_image)
 
         self._hypervisor = libvirt.open(
-            self.configuration.get('hypervisor', 'vbox:///session'))
+            self.configuration.get("hypervisor", "vbox:///session")
+        )
 
-        self._domain = domain_create(self._hypervisor, self.identifier,
-                                     self.configuration['domain'], disk_path)
+        self._domain = domain_create(
+            self._hypervisor, self.identifier, self.configuration["domain"], disk_path
+        )
 
     def deallocate(self):
         """Releases all resources."""

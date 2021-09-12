@@ -12,18 +12,20 @@
 # implied.  See the License for the specific language governing
 # permissions and limitations under the License.
 
-__all__ = ['SeeContext',
-           'LXCContextFactory',
-           'QEMUContextFactory',
-           'VBoxContextFactory',
-           'NOSTATE',
-           'RUNNING',
-           'BLOCKED',
-           'PAUSED',
-           'SHUTDOWN',
-           'SHUTOFF',
-           'CRASHED',
-           'SUSPENDED']
+__all__ = [
+    "SeeContext",
+    "LXCContextFactory",
+    "QEMUContextFactory",
+    "VBoxContextFactory",
+    "NOSTATE",
+    "RUNNING",
+    "BLOCKED",
+    "PAUSED",
+    "SHUTDOWN",
+    "SHUTOFF",
+    "CRASHED",
+    "SUSPENDED",
+]
 
 from see.context.context import SeeContext
 from see.context.context import LXCContextFactory

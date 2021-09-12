@@ -114,15 +114,15 @@ class Resources(object):
 
         """
         if self._image is None:
-            if isinstance(self.configuration['disk']['image'], dict):
+            if isinstance(self.configuration["disk"]["image"], dict):
                 ProviderClass = lookup_provider_class(
-                    self.configuration['disk']['image']['provider'])
-                self._image = ProviderClass(
-                    self.configuration['disk']['image']).image
+                    self.configuration["disk"]["image"]["provider"]
+                )
+                self._image = ProviderClass(self.configuration["disk"]["image"]).image
             else:
                 # If image is not a dictionary, return it as is for backwards
                 # compatibility
-                self._image = self.configuration['disk']['image']
+                self._image = self.configuration["disk"]["image"]
         return self._image
 
 
@@ -130,7 +130,6 @@ def lookup_provider_class(name):
     ProviderClass = lookup_class(name)
 
     if not issubclass(ProviderClass, ImageProvider):
-        raise TypeError("%r is not subclass of of %r" %
-                         (ProviderClass, ImageProvider))
+        raise TypeError("%r is not subclass of of %r" % (ProviderClass, ImageProvider))
     else:
         return ProviderClass

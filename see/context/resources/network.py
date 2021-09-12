@@ -82,18 +82,16 @@ def create(hypervisor, identifier, configuration):
     counter = count()
     xml_config = DEFAULT_NETWORK_XML
 
-    if not {'configuration', 'dynamic_address'} & set(configuration.keys()):
-        raise RuntimeError(
-            "Either configuration or dynamic_address must be specified")
+    if not {"configuration", "dynamic_address"} & set(configuration.keys()):
+        raise RuntimeError("Either configuration or dynamic_address must be specified")
 
-    if 'configuration' in configuration:
-        with open(configuration['configuration']) as xml_file:
+    if "configuration" in configuration:
+        with open(configuration["configuration"]) as xml_file:
             xml_config = xml_file.read()
 
     while True:
-        if 'dynamic_address' in configuration:
-            address = generate_address(hypervisor,
-                                       configuration['dynamic_address'])
+        if "dynamic_address" in configuration:
+            address = generate_address(hypervisor, configuration["dynamic_address"])
             xml_string = network_xml(identifier, xml_config, address=address)
         else:
             xml_string = network_xml(identifier, xml_config)
@@ -104,8 +102,10 @@ def create(hypervisor, identifier, configuration):
             if next(counter) > MAX_ATTEMPTS:
                 raise RuntimeError(
                     "Exceeded failed attempts ({}) to get IP address.".format(
-                        MAX_ATTEMPTS),
-                    "Last error: {}".format(error))
+                        MAX_ATTEMPTS
+                    ),
+                    "Last error: {}".format(error),
+                )
 
 
 def lookup(domain):
@@ -121,7 +121,7 @@ def lookup(domain):
     subelm = element.find('.//interface[@type="network"]')
 
     if subelm is not None:
-        network = subelm.find('.//source').get('network')
+        network = subelm.find(".//source").get("network")
         hypervisor = domain.connect()
 
         return hypervisor.networkLookupByName(network)
@@ -144,24 +144,24 @@ def delete(network):
 def network_xml(identifier, xml, address=None):
     """Fills the XML file with the required fields.
 
-     * name
-     * uuid
-     * bridge
-     * ip
-     ** dhcp
+    * name
+    * uuid
+    * bridge
+    * ip
+    ** dhcp
 
     """
     netname = identifier[:8]
     network = etree.fromstring(xml)
 
-    subelement(network, './/name', 'name', identifier)
-    subelement(network, './/uuid', 'uuid', identifier)
-    subelement(network, './/bridge', 'bridge', None, name='virbr-%s' % netname)
+    subelement(network, ".//name", "name", identifier)
+    subelement(network, ".//uuid", "uuid", identifier)
+    subelement(network, ".//bridge", "bridge", None, name="virbr-%s" % netname)
 
     if address is not None:
         set_address(network, address)
 
-    return etree.tostring(network).decode('utf-8')
+    return etree.tostring(network).decode("utf-8")
 
 
 def set_address(network, address):
@@ -171,25 +171,25 @@ def set_address(network, address):
     according to the subnet prefix length.
 
     """
-    if network.find('.//ip') is not None:
+    if network.find(".//ip") is not None:
         raise RuntimeError("Address already specified in XML configuration.")
 
     netmask = str(address.netmask)
     ipv4 = str(address[1])
     dhcp_start = str(address[2])
     dhcp_end = str(address[-2])
-    ip = etree.SubElement(network, 'ip', address=ipv4, netmask=netmask)
-    dhcp = etree.SubElement(ip, 'dhcp')
+    ip = etree.SubElement(network, "ip", address=ipv4, netmask=netmask)
+    dhcp = etree.SubElement(ip, "dhcp")
 
-    etree.SubElement(dhcp, 'range', start=dhcp_start, end=dhcp_end)
+    etree.SubElement(dhcp, "range", start=dhcp_start, end=dhcp_end)
 
 
 def generate_address(hypervisor, configuration):
     """Generate a valid IP address according to the configuration."""
-    ipv4 = configuration['ipv4']
-    prefix = configuration['prefix']
-    subnet_prefix = configuration['subnet_prefix']
-    subnet_address = ipaddress.IPv4Network(u'/'.join((str(ipv4), str(prefix))))
+    ipv4 = configuration["ipv4"]
+    prefix = configuration["prefix"]
+    subnet_prefix = configuration["subnet_prefix"]
+    subnet_address = ipaddress.IPv4Network(u"/".join((str(ipv4), str(prefix))))
     net_address_pool = subnet_address.subnets(new_prefix=subnet_prefix)
 
     return address_lookup(hypervisor, net_address_pool)
@@ -216,12 +216,13 @@ def active_network_addresses(hypervisor):
         except libvirt.libvirtError:  # network has been destroyed meanwhile
             continue
         else:
-            ip_element = etree.fromstring(xml).find('.//ip')
-            address = ip_element.get('address')
-            netmask = ip_element.get('netmask')
+            ip_element = etree.fromstring(xml).find(".//ip")
+            address = ip_element.get("address")
+            netmask = ip_element.get("netmask")
 
-            active.append(ipaddress.IPv4Network(u'/'.join((address, netmask)),
-                                                strict=False))
+            active.append(
+                ipaddress.IPv4Network(u"/".join((address, netmask)), strict=False)
+            )
 
     return active
 
